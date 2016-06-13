@@ -139,6 +139,7 @@ public class QuorumPeerConfig {
             String value = entry.getValue().toString().trim();
             if (key.equals("dataDir")) {
                 dataDir = value;
+                System.out.println(dataDir);
             } else if (key.equals("dataLogDir")) {
                 dataLogDir = value;
             } else if (key.equals("clientPort")) {

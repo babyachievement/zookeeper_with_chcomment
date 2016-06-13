@@ -277,6 +277,7 @@ public class ZooKeeperServer implements SessionExpirer, ServerStats.Provider {
             setZxid(zkDb.getDataTreeLastProcessedZxid());
         }
         else {
+        	//执行恢复，并返回最新的事务ID  
             setZxid(zkDb.loadDataBase());
         }
         

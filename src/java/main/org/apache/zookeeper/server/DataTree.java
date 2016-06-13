@@ -210,6 +210,7 @@ public class DataTree {
             -1L, new StatPersisted());
 
     public DataTree() {
+    	//'/','/zookeeper','/zookeeper/quota'3个系统节点初始化
         /* Rather than fight it, let root have an alias */
         nodes.put("", root);
         nodes.put(rootZookeeper, root);
