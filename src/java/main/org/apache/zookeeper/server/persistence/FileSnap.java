@@ -69,10 +69,13 @@ public class FileSnap implements SnapShot {
         // we run through 100 snapshots (not all of them)
         // if we cannot get it running within 100 snapshots
         // we should  give up
+    	//找前100个snapshot文件，降序，最新的文件在最前面  
         List<File> snapList = findNValidSnapshots(100);
         if (snapList.size() == 0) {
             return -1L;
         }
+        
+        //从最新的文件开始恢复，如果反序列化ok而且checksum也ok，则恢复结束  
         File snap = null;
         boolean foundValid = false;
         for (int i = 0; i < snapList.size(); i++) {
@@ -104,6 +107,7 @@ public class FileSnap implements SnapShot {
         if (!foundValid) {
             throw new IOException("Not able to find valid snapshots in " + snapDir);
         }
+        //snapshot文件名就记录着最新的zxid 
         dt.lastProcessedZxid = Util.getZxidFromName(snap.getName(), "snapshot");
         return dt.lastProcessedZxid;
     }

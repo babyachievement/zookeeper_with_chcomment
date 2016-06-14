@@ -65,6 +65,7 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory implements Runnable 
     final HashMap<InetAddress, Set<NIOServerCnxn>> ipMap =
         new HashMap<InetAddress, Set<NIOServerCnxn>>( );
 
+    // 同一个IP地址的客户端能够存在的最大连接数，如果为负值则说明不限制
     int maxClientCnxns = 60;
 
     /**
@@ -173,6 +174,7 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory implements Runnable 
     public void run() {
         while (!ss.socket().isClosed()) {
             try {
+            	//select过程
                 selector.select(1000);
                 Set<SelectionKey> selected;
                 synchronized (this) {
@@ -180,13 +182,16 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory implements Runnable 
                 }
                 ArrayList<SelectionKey> selectedList = new ArrayList<SelectionKey>(
                         selected);
+                //打乱顺序?TODO
                 Collections.shuffle(selectedList);
                 for (SelectionKey k : selectedList) {
+                	//新连接进来，accept
                     if ((k.readyOps() & SelectionKey.OP_ACCEPT) != 0) {
                         SocketChannel sc = ((ServerSocketChannel) k
                                 .channel()).accept();
                         InetAddress ia = sc.socket().getInetAddress();
                         int cnxncount = getClientCnxnCount(ia);
+                        //校验同个client连接数是否超过限制
                         if (maxClientCnxns > 0 && cnxncount >= maxClientCnxns){
                             LOG.warn("Too many connections from " + ia
                                      + " - max is " + maxClientCnxns );
@@ -194,14 +199,20 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory implements Runnable 
                         } else {
                             LOG.info("Accepted socket connection from "
                                      + sc.socket().getRemoteSocketAddress());
+                            //非阻塞方式
                             sc.configureBlocking(false);
+                            //监听read事件
                             SelectionKey sk = sc.register(selector,
                                     SelectionKey.OP_READ);
+                            //创建内部连接 
                             NIOServerCnxn cnxn = createConnection(sc, sk);
                             sk.attach(cnxn);
+                            //添加到连接表，方便后续统计  
                             addCnxn(cnxn);
                         }
-                    } else if ((k.readyOps() & (SelectionKey.OP_READ | SelectionKey.OP_WRITE)) != 0) {
+                    } 
+                    //如果是read和write事件，则处理之  
+                    else if ((k.readyOps() & (SelectionKey.OP_READ | SelectionKey.OP_WRITE)) != 0) {
                         NIOServerCnxn c = (NIOServerCnxn) k.attachment();
                         c.doIO(k);
                     } else {
@@ -211,6 +222,7 @@ public class NIOServerCnxnFactory extends ServerCnxnFactory implements Runnable 
                         }
                     }
                 }
+                //准备下次IO  
                 selected.clear();
             } catch (RuntimeException e) {
                 LOG.warn("Ignoring unexpected runtime exception", e);
