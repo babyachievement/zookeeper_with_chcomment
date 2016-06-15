@@ -27,6 +27,7 @@ import org.apache.zookeeper.server.DataTree;
  * snapshot interface for the persistence layer.
  * implement this interface for implementing 
  * snapshots.
+ * snapshot接口，实现此接口实现对datatree做镜像
  */
 public interface SnapShot {
     
